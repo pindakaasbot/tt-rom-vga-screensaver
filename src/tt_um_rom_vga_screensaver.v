@@ -6,7 +6,7 @@
 
 `default_nettype none
 
-parameter LOGO_SIZE = 64;  // Size of the logo in pixels
+parameter LOGO_SIZE = 128;  // Size of the logo in pixels
 parameter DISPLAY_WIDTH = 640;  // VGA display width
 parameter DISPLAY_HEIGHT = 480;  // VGA display height
 
@@ -87,16 +87,19 @@ module tt_um_rom_vga_screensaver (
 
   wire [9:0] x = (pix_x - logo_left) >> cfg_double;
   wire [9:0] y = (pix_y - logo_top) >> cfg_double;
-  wire logo_pixels = cfg_tile || (x[9:6] == 0 && y[9:6] == 0);
+  wire logo_pixels = cfg_tile || (x[9:7] == 0 && y[9:7] == 0);
 
-  // Bitmap ROM:
+  // Bitmap ROM: addr = {y[6:0], x[3:0], 1'b0}
   wire [7:0] rom_data;
   rom_vga_logo bitmap_rom (
-      .addr({y[5:0], x[5:0]}),
+      .addr({y[6:0], x[3:0], 1'b0}),
       .q   (rom_data)
   );
 
-  // RGB output logic
+  // Monochrome pixel extraction: 8-to-1 mux based on x[6:4]
+  wire pixel = rom_data[x[6:4]];
+
+  // Monochrome output (white on black)
   always @(posedge clk) begin
     if (~rst_n) begin
       R <= 0;
@@ -107,9 +110,9 @@ module tt_um_rom_vga_screensaver (
       G <= 0;
       B <= 0;
       if (video_active && logo_pixels) begin
-        R <= rom_data[5:4];
-        G <= rom_data[3:2];
-        B <= rom_data[1:0];
+        R <= {2{pixel}};
+        G <= {2{pixel}};
+        B <= {2{pixel}};
       end
     end
   end
@@ -188,6 +191,6 @@ module tt_um_rom_vga_screensaver (
     end
   endtask
 
-  wire  _unused = &{rom_data[7:6]};
+  wire  _unused = &{rom_data};
 
 endmodule

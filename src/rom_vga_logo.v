@@ -5,7 +5,7 @@
 `default_nettype none
 
 `ifndef ROM_VMEM_PATH
-`define ROM_VMEM_PATH "../src/logo_6bpp.hex"
+`define ROM_VMEM_PATH "../src/logo_1bpp.hex"
 `endif
 
 module rom_vga_logo (
