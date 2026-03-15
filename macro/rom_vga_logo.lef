@@ -2,9 +2,9 @@ VERSION 5.7 ;
   NOWIREEXTENSIONATPIN ON ;
   DIVIDERCHAR "/" ;
   BUSBITCHARS "[]" ;
-MACRO rom_vga_logo
+MACRO rom_vga_logo_nodfill
   CLASS BLOCK ;
-  FOREIGN rom_vga_logo ;
+  FOREIGN rom_vga_logo_nodfill ;
   ORIGIN 0.000 0.000 ;
   SIZE 144.900 BY 112.300 ;
   PIN addr[0]
@@ -263,6 +263,6 @@ MACRO rom_vga_logo
         RECT 139.155 7.045 144.350 9.095 ;
         RECT 1.245 0.615 144.350 7.045 ;
   END
-END rom_vga_logo
+END rom_vga_logo_nodfill
 END LIBRARY
 
