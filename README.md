@@ -1,42 +1,60 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# ROM VGA Screensaver with Silicon Art
 
-- [Read the documentation for project](docs/info.md)
+A bouncing logo VGA screensaver for Tiny Tapeout, where the logo image is stored in a NOR ROM macro. The transistor pattern in the ROM is arranged so that the image is visible in die photos — silicon art.
 
-## What is Tiny Tapeout?
+Based on [tt-rom-vga-screensaver](https://github.com/urish/tt-rom-vga-screensaver) by Uri Shaked.
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+## How it works
 
-To learn more and get started, visit https://tinytapeout.com.
+A 128x128 monochrome bitmap is stored in a 4096x8-bit NOR ROM (32,768 cells). The VGA controller reads pixels from the ROM and displays a white-on-black bouncing logo at 640x480 @ 25MHz. Tiling and 2x scaling modes are available via input pins.
 
-## Set up your Verilog project
+In the physical GDS, each ROM cell either has an NFET transistor (pixel = 1) or doesn't (pixel = 0). By controlling which cells have transistors, the TT logo appears as a visible pattern in the diffusion layer of the fabricated chip.
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+## ROM generation
 
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
+The ROM macro is generated using the `rom_gen/` scripts. To regenerate with a different image:
 
-## Enable GitHub actions to build the results page
+```bash
+# 1. Convert image to ROM binary (128x128 monochrome)
+python3 artwork/convert_1bpp.py path/to/image.png
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+# 2. Generate ROM GDS macro from binary
+cd rom_gen
+python3 rom.py rom_128x32x8 rom_vga_logo ../artwork/logo_1bpp.bin
 
-## Resources
+# 3. Copy generated files to macro directory
+gzip -c rom_vga_logo.gds > ../macro/rom_vga_logo.gds.gz
+cp rom_vga_logo.lef ../macro/rom_vga_logo.lef
+# Keep the existing .lib (generator uses different port names)
+```
 
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+The converter (`artwork/convert_1bpp.py`) handles the address mapping between image pixels and ROM cells, including orientation transforms so the image appears correctly in both the VGA output and the GDS layout.
 
-## What next?
+### ROM address mapping
 
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+```
+addr[11:5] = x[6:0]    -> wordline (GDS X axis)
+addr[4:1]  = y[3:0]    -> sub-bitline pair (GDS Y axis)
+addr[0]    = 0          -> duplicated
+output_bit = y[6:4]    -> bitline block (GDS Y axis)
+```
+
+The RTL uses `~x` in the address to compensate for a 180-degree rotation applied in the ROM data (so the image appears right-side up in both the GDS viewer and on the VGA display).
+
+## Pinout
+
+| Pin | Function |
+|-----|----------|
+| ui_in[0] | Tile mode (fill screen with logo) |
+| ui_in[1] | Double size (256x256 on screen) |
+| ui_in[4:6] | Gamepad PMOD (latch, clk, data) |
+| uo_out[0] | R1 |
+| uo_out[1] | G1 |
+| uo_out[2] | B1 |
+| uo_out[3] | VSync |
+| uo_out[4] | R0 |
+| uo_out[5] | G0 |
+| uo_out[6] | B0 |
+| uo_out[7] | HSync |
