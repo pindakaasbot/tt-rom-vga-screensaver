@@ -111,15 +111,10 @@ async def test_project(dut):
     frame = await capture_frame(1)
     frame.save(f"output/frame1.png")
 
-    # Second frame: tiled logo
+    # Third frame: tiled logo
     dut.ui_in.value = 1  # tile
     frame = await capture_frame(2)
     frame.save(f"output/frame2.png")
-
-    # Third frame: double size logo
-    dut.ui_in.value = 2  # double
-    frame = await capture_frame(3)
-    frame.save(f"output/frame3.png")
 
 
 @cocotb.test()

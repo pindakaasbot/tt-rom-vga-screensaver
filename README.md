@@ -48,7 +48,6 @@ The RTL uses `~x` in the address to compensate for a 180-degree rotation applied
 | Pin | Function |
 |-----|----------|
 | ui_in[0] | Tile mode (fill screen with logo) |
-| ui_in[1] | Double size (256x256 on screen) |
 | ui_in[4:6] | Gamepad PMOD (latch, clk, data) |
 | uo_out[0] | R1 |
 | uo_out[1] | G1 |

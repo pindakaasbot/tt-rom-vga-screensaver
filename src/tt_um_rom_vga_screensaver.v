@@ -33,7 +33,6 @@ module tt_um_rom_vga_screensaver (
 
   // Configuration
   wire cfg_tile = ui_in[0];
-  wire cfg_double = ui_in[1];
 
   // Tiny VGA Pmod
   assign uo_out = {hsync, B[0], G[0], R[0], vsync, B[1], G[1], R[1]};
@@ -85,8 +84,8 @@ module tt_um_rom_vga_screensaver (
   reg dir_y;
   reg manual_mode;
 
-  wire [9:0] x = (pix_x - logo_left) >> cfg_double;
-  wire [9:0] y = (pix_y - logo_top) >> cfg_double;
+  wire [9:0] x = pix_x - logo_left;
+  wire [9:0] y = pix_y - logo_top;
   wire logo_pixels = cfg_tile || (x[9:7] == 0 && y[9:7] == 0);
 
   // Bitmap ROM: addr = {~x[6:0], y[3:0], 1'b0}
@@ -150,13 +149,13 @@ module tt_um_rom_vga_screensaver (
     if (gamepad_left && logo_left > 0) begin
       logo_left <= logo_left - 1;
     end
-    if (gamepad_right && logo_left + 1 < DISPLAY_WIDTH - (LOGO_SIZE << cfg_double)) begin
+    if (gamepad_right && logo_left + 1 < DISPLAY_WIDTH - (LOGO_SIZE)) begin
       logo_left <= logo_left + 1;
     end
     if (gamepad_up && logo_top > 0) begin
       logo_top <= logo_top - 1;
     end
-    if (gamepad_down && logo_top + 1 < DISPLAY_HEIGHT - (LOGO_SIZE << cfg_double)) begin
+    if (gamepad_down && logo_top + 1 < DISPLAY_HEIGHT - (LOGO_SIZE)) begin
       logo_top <= logo_top + 1;
     end
   endtask
@@ -181,13 +180,13 @@ module tt_um_rom_vga_screensaver (
     if (logo_left - 1 == 0 && !dir_x) begin
       dir_x <= 1;
     end
-    if (logo_left + 1 == DISPLAY_WIDTH - (LOGO_SIZE << cfg_double) && dir_x) begin
+    if (logo_left + 1 == DISPLAY_WIDTH - (LOGO_SIZE) && dir_x) begin
       dir_x <= 0;
     end
     if (logo_top - 1 == 0 && !dir_y) begin
       dir_y <= 1;
     end
-    if (logo_top + 1 == DISPLAY_HEIGHT - (LOGO_SIZE << cfg_double) && dir_y) begin
+    if (logo_top + 1 == DISPLAY_HEIGHT - (LOGO_SIZE) && dir_y) begin
       dir_y <= 0;
     end
   endtask
