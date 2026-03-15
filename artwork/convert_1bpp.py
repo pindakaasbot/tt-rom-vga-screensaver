@@ -87,8 +87,8 @@ def bitmap_to_rom(bitmap):
             byte_val = 0
             for bit in range(8):         # q[bit] = y[6:4] → bitline block
                 py = bit * 16 + y_lo     # image y coordinate
-                # Flip Y for GDS orientation
-                pixel = bitmap[SIZE - 1 - py][x]
+                # Rotate 180 for GDS orientation (flip both X and Y)
+                pixel = bitmap[py][SIZE - 1 - x]
                 byte_val |= (pixel << bit)
             # Write same value for addr[0]=0 and addr[0]=1
             addr_base = x * 32 + y_lo * 2
@@ -157,13 +157,13 @@ def main():
         print(f"  (preview skipped: {e})")
 
     # Verify round-trip: extract bitmap back from ROM data
-    # ROM stores: addr = {x[6:0], (127-y)[3:0], 0}, bit = (127-y)[6:4]
+    # ROM stores 180-deg rotated: addr = {(127-x)[6:0], y[3:0], 0}, bit = y[6:4]
     errors = 0
     for y in range(SIZE):
         for x in range(SIZE):
-            fy = SIZE - 1 - y  # flipped y (as stored in ROM)
-            addr = x * 32 + (fy & 0xF) * 2  # addr[0]=0
-            bit = (fy >> 4) & 7
+            fx = SIZE - 1 - x  # flipped x (as stored in ROM)
+            addr = fx * 32 + (y & 0xF) * 2  # addr[0]=0
+            bit = (y >> 4) & 7
             extracted = (rom_data[addr] >> bit) & 1
             if extracted != bitmap[y][x]:
                 errors += 1

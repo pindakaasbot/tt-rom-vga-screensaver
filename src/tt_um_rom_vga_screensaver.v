@@ -89,16 +89,16 @@ module tt_um_rom_vga_screensaver (
   wire [9:0] y = (pix_y - logo_top) >> cfg_double;
   wire logo_pixels = cfg_tile || (x[9:7] == 0 && y[9:7] == 0);
 
-  // Bitmap ROM: addr = {x[6:0], ~y[3:0], 1'b0}
-  // X maps to wordlines (GDS X), ~Y maps to bitlines (GDS Y, flipped for orientation)
+  // Bitmap ROM: addr = {~x[6:0], y[3:0], 1'b0}
+  // ~X maps to wordlines (GDS X, flipped for 180-deg rotation), Y maps to bitlines (GDS Y)
   wire [7:0] rom_data;
   rom_vga_logo bitmap_rom (
-      .addr({x[6:0], ~y[3:0], 1'b0}),
+      .addr({~x[6:0], y[3:0], 1'b0}),
       .q   (rom_data)
   );
 
-  // Monochrome pixel extraction: 8-to-1 mux based on ~y[6:4]
-  wire pixel = rom_data[~y[6:4]];
+  // Monochrome pixel extraction: 8-to-1 mux based on y[6:4]
+  wire pixel = rom_data[y[6:4]];
 
   // Monochrome output (white on black)
   always @(posedge clk) begin
