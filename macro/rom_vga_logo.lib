@@ -1,4 +1,4 @@
-library (rom_vga_logo_nodfill_lib) {
+library (rom_vga_logo_lib) {
   delay_model : "table_lookup";
   library_features : "report_delay_calculation";
   voltage_unit : "1V";
@@ -44,7 +44,7 @@ library (rom_vga_logo_nodfill_lib) {
     bit_to : 0;
     downto : true;
   }
-  cell (rom_vga_logo_nodfill) {
+  cell (rom_vga_logo) {
     dont_touch : true;
     dont_use : true;
     map_only : true;
