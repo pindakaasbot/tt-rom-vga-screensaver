@@ -70,25 +70,28 @@ def gradient_bitmap():
 def bitmap_to_rom(bitmap):
     """Convert 128x128 bitmap to 4096-byte ROM data.
 
-    For each ROM address (0..4095):
-      addr[11:5] = y[6:0]     → selects wordline (row)
-      addr[4:1]  = x[3:0]     → selects sub-bitline pair
+    ROM generator maps: wordlines → GDS X, bitlines → GDS Y.
+    To make the image appear correctly in GDS:
+      addr[11:5] = x[6:0]     → wordline → GDS X (image column)
+      addr[4:1]  = y[3:0]     → sub-bitline pair → GDS Y (image row low bits)
       addr[0]    = LSB        → duplicated (same data for 0 and 1)
+      output_bit = y[6:4]     → bitline block → GDS Y (image row high bits)
 
-    Each byte packs 8 pixel values from output bits q[7:0]:
-      q[bit] corresponds to pixel at x = bit*16 + x_lo
-      where bit = x[6:4] and x_lo = x[3:0] = addr[4:1]
+    Y is flipped (127-y) so image appears right-side up in GDS
+    (GDS Y increases upward, image Y increases downward).
+    RTL compensates with ~y in the address/mux.
     """
     rom_data = bytearray(4096)
-    for y in range(SIZE):
-        for x_lo in range(16):  # addr[4:1]
+    for x in range(SIZE):                # addr[11:5] = x → wordline → GDS X
+        for y_lo in range(16):           # addr[4:1] = y[3:0] → sub-bitline
             byte_val = 0
-            for bit in range(8):  # q[7:0] = output bit
-                px = bit * 16 + x_lo  # image x coordinate
-                pixel = bitmap[y][px]  # 0 or 1
+            for bit in range(8):         # q[bit] = y[6:4] → bitline block
+                py = bit * 16 + y_lo     # image y coordinate
+                # Flip Y for GDS orientation
+                pixel = bitmap[SIZE - 1 - py][x]
                 byte_val |= (pixel << bit)
             # Write same value for addr[0]=0 and addr[0]=1
-            addr_base = y * 32 + x_lo * 2
+            addr_base = x * 32 + y_lo * 2
             rom_data[addr_base + 0] = byte_val
             rom_data[addr_base + 1] = byte_val
     return rom_data
@@ -154,11 +157,13 @@ def main():
         print(f"  (preview skipped: {e})")
 
     # Verify round-trip: extract bitmap back from ROM data
+    # ROM stores: addr = {x[6:0], (127-y)[3:0], 0}, bit = (127-y)[6:4]
     errors = 0
     for y in range(SIZE):
         for x in range(SIZE):
-            addr = y * 32 + (x & 0xF) * 2  # addr[0]=0
-            bit = (x >> 4) & 7
+            fy = SIZE - 1 - y  # flipped y (as stored in ROM)
+            addr = x * 32 + (fy & 0xF) * 2  # addr[0]=0
+            bit = (fy >> 4) & 7
             extracted = (rom_data[addr] >> bit) & 1
             if extracted != bitmap[y][x]:
                 errors += 1
